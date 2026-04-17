@@ -1,0 +1,278 @@
+<!DOCTYPE html>
+<html lang="bn">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Health - Research AI</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.5/font/bootstrap-icons.css" rel="stylesheet">
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+
+<body>
+    
+    <div class="chat-wrapper shadow">
+        <div class="chat-header">
+            <i class="bi bi-rocket-takeoff-fill"></i> স্বাস্থ্য সহায়ক
+        </div>
+
+        <div class="chat-box" id="chatBox">
+            <div class="message bot-message">
+                স্বাগতম! আমি আপনার স্বাস্থ্য বিষয়ক যেকোনো প্রশ্নের উত্তর দিতে প্রস্তুত...
+            </div>
+        </div>
+
+        <form id="predictionForm" enctype="multipart/form-data" class="input-container">
+            <input type="file" name="audio" id="audioData" style="display:none;">
+
+            <div class="input-group">
+                <textarea name="text" id="textInput" class="form-control" placeholder="আপনার সমস্যা লিখুন..."
+                    rows="1"></textarea>
+
+                <button type="button" id="recordBtn" class="btn-record" title="ভয়েস রেকর্ড করুন">
+                    <i class="bi bi-mic-fill" id="micIcon"></i>
+                </button>
+
+                <button type="submit" class="btn-send" title="ম্যাসেজ পাঠান">
+                    <i class="bi bi-send-fill"></i>
+                </button>
+            </div>
+            <div id="recordStatus" class="status-text">রেকর্ড করতে ক্লিক করুন</div>
+        </form>
+    </div>
+
+    <script>
+        const recordBtn = document.getElementById('recordBtn');
+        const micIcon = document.getElementById('micIcon');
+        const recordStatus = document.getElementById('recordStatus');
+        const audioInput = document.getElementById('audioData');
+        const textInput = document.getElementById('textInput');
+        const form = document.getElementById('predictionForm');
+        const chatBox = document.getElementById('chatBox');
+
+        let mediaRecorder;
+        let audioChunks = [];
+        let currentAudioUrl = null;
+
+        // Function to add messages to chatbox
+        function addMessage(text, isUser = false) {
+            const messageDiv = document.createElement('div');
+            messageDiv.classList.add('message');
+            messageDiv.classList.add(isUser ? 'user-message' : 'bot-message');
+            messageDiv.innerText = text;
+            chatBox.appendChild(messageDiv);
+            chatBox.scrollTop = chatBox.scrollHeight;
+        }
+
+        // Format time in mm:ss
+        function formatTime(seconds) {
+            if (isNaN(seconds) || !isFinite(seconds)) return "0:00";
+            const m = Math.floor(seconds / 60);
+            const s = Math.floor(seconds % 60);
+            return m + ":" + (s < 10 ? "0" + s : s);
+        }
+
+        // Play/Pause audio toggle
+        function toggleAudio(btnId, audioId, progressId, timeId) {
+            const audio = document.getElementById(audioId);
+            const btn = document.getElementById(btnId);
+            const icon = btn.querySelector('i');
+            
+            if (audio.paused) {
+                // Pause all other audios first
+                document.querySelectorAll('audio').forEach(a => {
+                    if(a.id !== audioId && !a.paused) {
+                        a.pause();
+                        const otherBtn = document.getElementById('btn-' + a.id);
+                        if(otherBtn) {
+                            const otherIcon = otherBtn.querySelector('i');
+                            otherIcon.className = 'bi bi-play-fill';
+                            otherIcon.style.marginLeft = '4px';
+                        }
+                    }
+                });
+                
+                audio.play();
+                icon.className = 'bi bi-pause-fill';
+                icon.style.marginLeft = '0px';
+            } else {
+                audio.pause();
+                icon.className = 'bi bi-play-fill';
+                icon.style.marginLeft = '4px';
+            }
+        }
+
+        // Seek audio based on click
+        function seekAudio(e, audioId) {
+            const audio = document.getElementById(audioId);
+            if (!audio.duration || !isFinite(audio.duration)) return;
+            const rect = e.currentTarget.getBoundingClientRect();
+            const clickX = e.clientX - rect.left;
+            const percent = Math.max(0, Math.min(1, clickX / rect.width));
+            audio.currentTime = percent * audio.duration;
+        }
+
+        // Function to add a graphical Voice Message to chatbox
+        function addVoiceMessage(isUser = false, audioUrl = null) {
+            const messageDiv = document.createElement('div');
+            messageDiv.classList.add('message');
+            messageDiv.classList.add(isUser ? 'user-message' : 'bot-message');
+            
+            const uniqueId = Date.now() + Math.floor(Math.random() * 1000);
+            
+            // Detailed WhatsApp-style Audio Player UI
+            messageDiv.innerHTML = `
+                <audio id="audio-${uniqueId}" src="${audioUrl || ''}" style="display:none;" preload="metadata"></audio>
+                <div class="voice-message-ui" style="display: flex; align-items: center; width: 230px; gap: 10px;">
+                    <!-- Light grey play button -->
+                    <div id="btn-audio-${uniqueId}" class="play-btn" onclick="toggleAudio('btn-audio-${uniqueId}', 'audio-${uniqueId}', 'progress-${uniqueId}', 'time-${uniqueId}')" style="background: rgba(255, 255, 255, 0.15); border-radius: 50%; width: 38px; height: 38px; display: flex; align-items: center; justify-content: center; flex-shrink: 0; cursor: pointer;">
+                        <i class="bi bi-play-fill" style="color: #d3d3d3; font-size: 1.6rem; margin-left: 4px;"></i>
+                    </div>
+
+                    <!-- Waveform visualization & progress handle -->
+                    <div class="waveform-wrapper" style="flex-grow: 1; height: 30px; position: relative; display: flex; align-items: center; cursor: pointer;" onclick="seekAudio(event, 'audio-${uniqueId}')">
+                        <svg viewBox="0 0 100 24" style="width: 100%; height: 100%; stroke: #8ba9eb; stroke-width: 2.5; stroke-linecap: round; opacity: 0.8; pointer-events: none;">
+                            <!-- Simulated audio waveform vectors -->
+                            <path d="M5,12 L5,12 M11,9 L11,15 M17,5 L17,19 M23,10 L23,14 M29,4 L29,20 M35,8 L35,16 M41,2 L41,22 M47,11 L47,13 M53,6 L53,18 M59,9 L59,15 M65,4 L65,20 M71,7 L71,17 M77,10 L77,14 M83,5 L83,19 M89,8 L89,16 M95,12 L95,12"></path>
+                        </svg>
+                        <!-- Light blue progress handle representing playback position -->
+                        <div id="progress-${uniqueId}" class="progress-handle" style="position: absolute; left: 0%; top: 50%; transform: translateY(-50%); width: 10px; height: 10px; background-color: #8ba9eb; border-radius: 50%; box-shadow: 0 0 5px rgba(0,0,0,0.2); transition: left 0.1s linear; pointer-events: none;"></div>
+                    </div>
+
+                    <!-- Digital timestamp -->
+                    <div id="time-${uniqueId}" class="voice-timestamp" style="font-size: 0.8rem; color: #b0c4de; font-weight: 500; font-family: monospace; letter-spacing: 0.5px; min-width: 32px; text-align: right;">
+                        0:00
+                    </div>
+                </div>
+            `;
+            chatBox.appendChild(messageDiv);
+            chatBox.scrollTop = chatBox.scrollHeight;
+            
+            // Setup audio events for this specific audio element
+            if(audioUrl) {
+                const audio = document.getElementById(`audio-${uniqueId}`);
+                const progress = document.getElementById(`progress-${uniqueId}`);
+                const timeSpan = document.getElementById(`time-${uniqueId}`);
+                const btnIcon = document.querySelector(`#btn-audio-${uniqueId} i`);
+                
+                // Chrome sometimes returns Infinity for blob duration until played
+                audio.onloadedmetadata = function() {
+                    if (audio.duration === Infinity) {
+                        audio.currentTime = 1e101; // Hack to get duration
+                        audio.ontimeupdate = function() {
+                            this.ontimeupdate = null;
+                            audio.currentTime = 0;
+                            timeSpan.innerText = formatTime(audio.duration);
+                        }
+                    } else {
+                        timeSpan.innerText = formatTime(audio.duration);
+                    }
+                };
+                
+                audio.ontimeupdate = function() {
+                    if (audio.duration && isFinite(audio.duration) && audio.duration > 0) {
+                        const percent = (audio.currentTime / audio.duration) * 100;
+                        progress.style.left = percent + '%';
+                        timeSpan.innerText = formatTime(audio.currentTime);
+                    }
+                };
+                
+                audio.onended = function() {
+                    btnIcon.className = 'bi bi-play-fill';
+                    btnIcon.style.marginLeft = '4px';
+                    progress.style.left = '0%';
+                    timeSpan.innerText = formatTime(audio.duration);
+                };
+            }
+        }
+
+        // Voice Recording Logic
+        recordBtn.addEventListener('click', async () => {
+            if (!mediaRecorder || mediaRecorder.state === "inactive") {
+                try {
+                    const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+                    mediaRecorder = new MediaRecorder(stream);
+                    audioChunks = [];
+
+                    mediaRecorder.ondataavailable = (e) => audioChunks.push(e.data);
+                    mediaRecorder.onstop = () => {
+                        const audioBlob = new Blob(audioChunks, { type: 'audio/wav' });
+                        const file = new File([audioBlob], "recording.wav", { type: "audio/wav" });
+                        
+                        // Generate URL for playback UI
+                        if(currentAudioUrl) URL.revokeObjectURL(currentAudioUrl);
+                        currentAudioUrl = URL.createObjectURL(audioBlob);
+
+                        const dataTransfer = new DataTransfer();
+                        dataTransfer.items.add(file);
+                        audioInput.files = dataTransfer.files;
+
+                        recordStatus.innerText = "ভয়েস রেকর্ড হয়েছে! এখন পাঠান";
+                        recordBtn.classList.remove('recording-active');
+                    };
+
+                    mediaRecorder.start();
+                    micIcon.className = "bi bi-stop-circle-fill";
+                    recordBtn.classList.add('recording-active');
+                    recordStatus.innerText = "রেকর্ড হচ্ছে... ক্লিক করে থামান";
+                } catch (err) {
+                    console.error("Microphone access anomaly detected:", err);
+                    recordStatus.innerText = "মাইক্রোফোন অ্যাক্সেস নেই!";
+                }
+            } else {
+                mediaRecorder.stop();
+                micIcon.className = "bi bi-mic-fill";
+            }
+        });
+
+        // Form submission via AJAX
+        form.addEventListener('submit', async (e) => {
+            e.preventDefault();
+
+            const formData = new FormData(form);
+            const text = textInput.value.trim();
+            const hasAudio = audioInput.files.length > 0;
+
+            if (!text && !hasAudio) return;
+
+            // Display user input in chat
+            if (text) addMessage(text, true);
+            if (hasAudio) addVoiceMessage(true, currentAudioUrl);
+
+            // Clear input fields
+            textInput.value = '';
+            textInput.style.height = 'auto';
+            audioInput.value = '';
+            currentAudioUrl = null;
+            recordStatus.innerText = "রেকর্ড করতে ক্লিক করুন";
+
+            // Call backend for prediction
+            try {
+                const response = await fetch('/predict', {
+                    method: 'POST',
+                    body: formData
+                });
+                const data = await response.json();
+                
+                if (data.prediction === "আপনার তথ্যে ভুল আছে" || data.prediction.includes("❌")) {
+                    addMessage(data.prediction);
+                } else {
+                    addMessage(`${data.prediction} হওয়ার সম্ভবনা রয়েছে`);
+                }
+            } catch (error) {
+                console.error("Connection lost:", error);
+                addMessage("দুঃখিত, কোনো ত্রুটি হয়েছে। অনুগ্রহ করে আবার চেষ্টা করুন।");
+            }
+        });
+
+        // Auto-resize textarea
+        textInput.addEventListener('input', function () {
+            this.style.height = 'auto';
+            this.style.height = (this.scrollHeight) + 'px';
+        });
+    </script>
+
+</body>
+
+</html>

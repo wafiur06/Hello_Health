@@ -1,0 +1,10 @@
+flask
+numpy
+librosa
+imageio
+noisereduce
+torch
+google-generativeai
+transformers
+tensorflow
+vercel-wsgi

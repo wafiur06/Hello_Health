@@ -1,0 +1,198 @@
+/* Dark Mode Professional Chat Stylesheet */
+body {
+    background: #111827; /* Darker Slate */
+    height: 100vh;
+    margin: 0;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    font-family: 'Noto Sans Bengali', sans-serif;
+    color: #f9fafb;
+    position: relative;
+    overflow: hidden;
+}
+
+/* Background floating rockets */
+.bg-rocket {
+    position: absolute;
+    color: #f9fafb;
+    font-size: 24px;
+    opacity: 0.8;
+}
+
+.bg-rocket-1 {
+    top: 15%;
+    left: 8%;
+    transform: rotate(-15deg);
+}
+
+.bg-rocket-2 {
+    top: 50%;
+    right: 8%;
+    transform: rotate(15deg);
+}
+
+/* Main Chat Container */
+.chat-wrapper {
+    width: 100%;
+    max-width: 600px;
+    height: 88vh;
+    background: #19202e; /* Slate 800 */
+    border-radius: 16px;
+    display: flex;
+    flex-direction: column;
+    box-shadow: 0 10px 40px rgba(0,0,0,0.6);
+    overflow: hidden;
+    position: relative;
+    z-index: 10;
+}
+
+.chat-header {
+    background: transparent;
+    color: #f9fafb;
+    padding: 24px 0;
+    font-size: 22px;
+    font-weight: bold;
+    text-align: center;
+    border-bottom: 1px solid rgba(255,255,255,0.05);
+    font-style: italic;
+}
+
+.chat-header i {
+    margin-right: 8px;
+}
+
+.chat-box {
+    flex: 1;
+    padding: 24px;
+    overflow-y: auto;
+    background: transparent;
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+}
+
+.chat-box::-webkit-scrollbar {
+    width: 5px;
+}
+
+.chat-box::-webkit-scrollbar-track {
+    background: transparent;
+}
+
+.chat-box::-webkit-scrollbar-thumb {
+    background: rgba(255,255,255,0.1);
+    border-radius: 5px;
+}
+
+.message {
+    max-width: 85%;
+    padding: 16px 20px;
+    border-radius: 12px;
+    font-size: 16px;
+    line-height: 1.6;
+    font-style: italic;
+    box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+}
+
+.bot-message {
+    background: #253041;
+    color: #f1f5f9;
+    align-self: flex-start;
+    border-bottom-left-radius: 4px;
+}
+
+.user-message {
+    background: #5c6bc0;
+    color: white;
+    align-self: flex-end;
+    border-bottom-right-radius: 4px;
+}
+
+.input-container {
+    padding: 20px 24px;
+    background: transparent;
+    border-top: 1px solid rgba(255,255,255,0.05);
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.input-group {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    width: 100%;
+}
+
+#textInput {
+    background: #1e2636;
+    border-radius: 8px;
+    padding: 14px 16px;
+    border: 1px solid #2d3748;
+    color: white;
+    resize: none;
+    max-height: 120px;
+    flex: 1;
+    overflow-y: hidden;
+    font-size: 15px;
+}
+
+#textInput::placeholder {
+    color: rgba(255, 255, 255, 0.4);
+}
+
+#textInput:focus {
+    box-shadow: none;
+    outline: none;
+    border-color: #5c6bc0;
+}
+
+/* Button styling matched to image */
+.btn-send, .btn-record {
+    border-radius: 8px; /* Square with rounded corners */
+    width: 52px;
+    height: 52px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border: none;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    font-size: 20px;
+}
+
+.btn-send { 
+    background: #5c6bc0; /* Nice blue-indigo */
+    color: white; 
+}
+
+.btn-send:hover {
+    background: #4f5ab6;
+}
+
+.btn-record { 
+    background: #1e2636; 
+    color: #ef4444; /* Red mic icon */
+    border: 1px solid #2d3748; 
+}
+
+.btn-record:hover {
+    background: #232c3f;
+}
+
+.btn-record.recording-active {
+    background: #ef4444;
+    color: white;
+    box-shadow: 0 0 15px rgba(239, 68, 68, 0.4);
+    border-color: #ef4444;
+}
+
+.status-text {
+    font-size: 13px;
+    color: rgba(255, 255, 255, 0.5);
+    text-align: center;
+    width: 100%;
+    margin-top: 4px;
+    font-style: italic;
+}

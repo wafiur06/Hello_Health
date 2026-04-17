@@ -7,4 +7,3 @@ torch
 google-generativeai
 transformers
 tensorflow
-vercel-wsgi

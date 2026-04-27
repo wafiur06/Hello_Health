@@ -1,5 +1,6 @@
 🩺 Hello_Health: Multimodal Health Classification
 Hello_Health is an AI-powered health informatics application designed to bridge the gap between regional Bengali dialects and automated health diagnosis. It accepts both text and audio inputs, converts regional speech into standard Bengali, and classifies the health issue into specific medical categories.
+
 🚀 Features
 Multimodal Prediction: Uses a hybrid fusion model (Audio + Text) to increase classification accuracy.
 Regional-to-Standard Bengali: Integrates Gemini 2.0 Flash to normalize regional dialects into standard Bengali (Cholitobhasha).

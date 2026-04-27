@@ -1,5 +1,5 @@
 Hello Health - Bengali Health Symptom Classifier
-A Flask-based web application that classifies health symptoms in Bengali language using multimodal machine learning. The app supports both text and voice input, automatically transcribes speech using Whisper ASR, and converts regional Bengali dialects to standard Bengali using Google's Gemini AI.
+A Flask-based web application that classifies health symptoms in Bengali language using multimodal machine learning. The app supports both text and voice input, automatically transcribes speech using Whisper ASR, and converts regional Bengali dialects to standard Bengali using Google's Gemini API.
 
 Features
 Multimodal Input: Accepts both text and audio input for symptom description
